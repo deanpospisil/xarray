@@ -1369,6 +1369,27 @@ class DataArray(AbstractArray, BaseDataObject):
     @property
     def imag(self):
         return self._replace(self.variable.imag)
+    
+    def tensordot( self, b, dims):
+        a = self
+        if not (isinstance(a, DataArray) and isinstance(b, DataArray)):
+            raise ValueError
+    
+        a, b = align(a, b, join='inner', copy=False)
+    
+        axes = (a.get_axis_num(dims), b.get_axis_num(dims))
+        f = ops._dask_or_eager_func('tensordot', n_array_args=2)
+        new_data = f(a.data, b.data, axes=axes)
+    
+        if isinstance(dims, str):
+            dims = [dims]
+    
+        new_coords = a.coords.merge(b.coords).drop(dims)
+    
+        new_dims = ([d for d in a.dims if d not in dims] +
+                    [d for d in b.dims if d not in dims])
+    
+        return DataArray(new_data, new_coords, new_dims)
 
 # priority most be higher than Variable to properly work with binary ufuncs
 ops.inject_all_ops_and_reduce_methods(DataArray, priority=60)

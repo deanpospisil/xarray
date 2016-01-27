@@ -1597,3 +1597,31 @@ class TestDataArray(TestCase):
             array.foo = 2
         with self.assertRaisesRegexp(AttributeError, 'cannot set attr'):
             array.other = 2
+
+    def test_tensordot(self):
+        x_trans = np.linspace(-3,3,6)
+        y_trans = np.linspace(-3,3,5)
+        imgID = range(4)
+        da_vals = np.arange(6*5*4).reshape(( 6, 5, 4 ))
+        da = DataArray( da_vals, 
+                        coords = [ x_trans, y_trans, imgID ], 
+                        dims = ['x_trans', 'y_trans', 'imgID'] )
+           
+        models = range(20)  
+        dm_vals = np.arange(20*5*4).reshape(( 20, 5, 4 ))
+        dm = DataArray( dm_vals , 
+                        coords = [ models, y_trans, imgID], 
+                        dims = [ 'models', 'y_trans', 'imgID' ] )
+        
+        expected_xarray = da.tensordot( dm, 'imgID')
+        
+        da = da.chunk()
+        dm = dm.chunk()
+        expected_dask = da.tensordot(dm, 'imgID').load()
+        self.assertDataArrayEqual(expected_dask, expected_xarray)        
+        
+        assert(not 'imgID' in expected_xarray.dims)
+        
+        expected_vals = np.tensordot(dm_vals, da_vals, (2,2))
+        actual_vals = expected_xarray.values
+        assert( (expected_vals == actual_vals.reshape( expected_vals.shape)).all )
