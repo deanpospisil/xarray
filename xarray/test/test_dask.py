@@ -300,3 +300,37 @@ class TestDataArrayAndDataset(DaskTestCase):
                              dims=['w', 'z'])
         assert stacked.data.chunks == expected.data.chunks
         self.assertLazyAndIdentical(expected, stacked)
+    
+    def test_dot(self):
+        x_trans = np.linspace(-3,3,6)
+        y_trans = np.linspace(-3,3,5)
+        imgID = range(4)
+        da_vals = np.arange(6*5*4).reshape(( 6, 5, 4 ))
+        da = DataArray( da_vals, 
+                        coords = [ x_trans, y_trans, imgID ], 
+                        dims = ['x_trans', 'y_trans', 'imgID'] )
+           
+        models = range(20)  
+        dm_vals = np.arange(20*5*4).reshape(( 20, 5, 4 ))
+        dm = DataArray( dm_vals , 
+                        coords = [ models, y_trans, imgID], 
+                        dims = [ 'models', 'y_trans_m', 'imgID' ] )
+        
+        expected_eager = da.dot(dm, 'imgID')
+        
+        da = da.chunk()
+        dm = dm.chunk()
+        
+        lazy = da.dot(dm, 'imgID')
+        actual_eager = lazy.load()
+
+        self.assertLazyAndAllClose(actual_eager, lazy)
+        
+        self.assertDataArrayEqual(expected_eager, actual_eager)
+        
+        #test call on tensordot with dask produces the expected DataArray
+        expected_vals = np.tensordot( da_vals, dm_vals, [2,2])
+        expected = DataArray( expected_vals , 
+                coords = [ x_trans, y_trans, models, y_trans], 
+                dims = [ 'x_trans', 'y_trans', 'models', 'y_trans_m' ] )
+        self.assertDataArrayEqual(expected, actual_eager)

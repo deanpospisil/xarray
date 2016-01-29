@@ -1370,24 +1370,69 @@ class DataArray(AbstractArray, BaseDataObject):
     def imag(self):
         return self._replace(self.variable.imag)
     
-    def tensordot( self, b, dims):
-        a = self
-        if not (isinstance(a, DataArray) and isinstance(b, DataArray)):
-            raise ValueError
+    def dot( self, other):
+        """Perform tensordot of two DataArrays along the dim labels 
+        specified. '''
+
+        Parameters
+        ----------
+        other: the DataArray with which the DataArray calling this function 
+        will perform tensordot with.
+        dims: 
+
+        Returns
+        -------
+        DataArray(new_data, new_coords, new_dims) : DataArray
+            new_data from tensordot performed over specificied dims
+            new_dims: the dims, that were not shared between DataArrays and 
+                        thus were not summed over.
+            new_coords: coords corresponding to those original unique dims.
+            
+        See also
+        --------
+        np.tensordot(a,b, axes)
+
+        Examples
+        --------
+        
+        >>> da.dims
+        ('x_trans', 'y_trans', 'imgID')  
+        >>> dm.dims
+        ('models', 'y_trans_m', 'imgID')
+   
+        >>> t = da.tensordot( dm, 'imgID')
+        >>> t.dims
+        ('x_trans', 'y_trans', 'models', 'y_trans_m')
+
+        """
+        s = self
+        
+        if isinstance( dims, basestring ):
+            dims = (dims,)
+        
+        for d in dims:
+            if not isinstance(d, basestring):
+                raise TypeError('dimension %s is not a string' % d)
+                
+        if not ( ( set(s.dims) & set(other.dims) ) == set(dims)):
+            raise ValueError('The two DataArrays shared dims should be the'  
+                            ' same as the dims to be summed over i.e. no' 
+                            ' repeated dim labels in the output and dims' 
+                            ' need to be shared to take a sum product.')
+        
+        if not ( isinstance(other, DataArray) ):
+            raise TypeError('tensordot only operates on DataArrays.')
     
-        a, b = align(a, b, join='inner', copy=False)
+        s, other = align(s, other, join='inner', copy=False)
     
-        axes = (a.get_axis_num(dims), b.get_axis_num(dims))
+        axes = (s.get_axis_num(dims), other.get_axis_num(dims))
         f = ops._dask_or_eager_func('tensordot', n_array_args=2)
-        new_data = f(a.data, b.data, axes=axes)
+        new_data = f(s.data, other.data, axes=axes)
     
-        if isinstance(dims, str):
-            dims = [dims]
+        new_coords = s.coords.merge(other.coords).drop(dims)
     
-        new_coords = a.coords.merge(b.coords).drop(dims)
-    
-        new_dims = ([d for d in a.dims if d not in dims] +
-                    [d for d in b.dims if d not in dims])
+        new_dims = ([d for d in s.dims if d not in dims] +
+                    [d for d in other.dims if d not in dims])
     
         return DataArray(new_data, new_coords, new_dims)
 

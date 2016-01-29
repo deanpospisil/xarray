@@ -1611,17 +1611,18 @@ class TestDataArray(TestCase):
         dm_vals = np.arange(20*5*4).reshape(( 20, 5, 4 ))
         dm = DataArray( dm_vals , 
                         coords = [ models, y_trans, imgID], 
-                        dims = [ 'models', 'y_trans', 'imgID' ] )
+                        dims = [ 'models', 'y_trans_m', 'imgID' ] )
+                        
+        #test call on dask DataArray produces same result as call on DataArray
+        actual_DataArray = da.tensordot( dm, 'imgID')
+      
+        #test call on tensor dot produces the expected DataArray
+        expected_vals = np.tensordot( da_vals, dm_vals, [2,2])
+        expected_DataArray = DataArray( expected_vals , 
+                coords = [ x_trans, y_trans, models, y_trans], 
+                dims = [ 'x_trans', 'y_trans', 'models', 'y_trans_m' ] )
+        self.assertDataArrayEqual(expected_DataArray, actual_DataArray) 
         
-        expected_xarray = da.tensordot( dm, 'imgID')
         
-        da = da.chunk()
-        dm = dm.chunk()
-        expected_dask = da.tensordot(dm, 'imgID').load()
-        self.assertDataArrayEqual(expected_dask, expected_xarray)        
         
-        assert(not 'imgID' in expected_xarray.dims)
         
-        expected_vals = np.tensordot(dm_vals, da_vals, (2,2))
-        actual_vals = expected_xarray.values
-        assert( (expected_vals == actual_vals.reshape( expected_vals.shape)).all )
