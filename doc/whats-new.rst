@@ -12,12 +12,12 @@ What's New
 
 .. _whats-new.0.7.1:
 
-v0.7.1 (tab)
+v0.7.1 (TBA)
 ------------------------
 
 Enhancements
 ~~~~~~~~~~~~
--xarray version of np.dot `~DataArray.dot`. Takes the sum product over the shared dimensions of two DataArrays. Can be useful for measuring correlation over common dimensions of two DataArrays.
+-xarray version of np.dot :py:meth:`~DataArray.dot`. Takes the sum product over the shared dimensions of two DataArrays. Can be useful for measuring correlation over common dimensions of two DataArrays.
 
 
 .. _whats-new.0.7.0:
