@@ -10,6 +10,16 @@ What's New
     import xarray as xr
     np.random.seed(123456)
 
+.. _whats-new.0.7.1:
+
+v0.7.1 (tab)
+------------------------
+
+Enhancements
+~~~~~~~~~~~~
+-xarray version of np.dot `~DataArray.dot`. Takes the sum product over the shared dimensions of two DataArrays. Can be useful for measuring correlation over common dimensions of two DataArrays.
+
+
 .. _whats-new.0.7.0:
 
 v0.7.0 (21 January 2016)

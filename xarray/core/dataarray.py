@@ -1371,21 +1371,20 @@ class DataArray(AbstractArray, BaseDataObject):
         return self._replace(self.variable.imag)
     
     def dot( self, other):
-        """Perform tensordot of two DataArrays along the dim labels 
-        specified. '''
+        """Perform sum product of two DataArrays along their shared dims. 
+        Equivalent to taking taking tensor dot over all shared dims'''
 
         Parameters
         ----------
         other: the DataArray with which the DataArray calling this function 
-        will perform tensordot with.
-        dims: 
+        will perform dot with.
 
         Returns
         -------
         DataArray(new_data, new_coords, new_dims) : DataArray
-            new_data from tensordot performed over specificied dims
-            new_dims: the dims, that were not shared between DataArrays and 
-                        thus were not summed over.
+            new_data: dot performed over shared DataArrays dims
+            new_dims: the dims that were not shared between DataArrays and 
+                      thus were not summed over.
             new_coords: coords corresponding to those original unique dims.
             
         See also
@@ -1400,28 +1399,18 @@ class DataArray(AbstractArray, BaseDataObject):
         >>> dm.dims
         ('models', 'y_trans_m', 'imgID')
    
-        >>> t = da.tensordot( dm, 'imgID')
+        >>> t = da.dot( dm )
         >>> t.dims
         ('x_trans', 'y_trans', 'models', 'y_trans_m')
 
         """
         s = self
-        
-        if isinstance( dims, basestring ):
-            dims = (dims,)
-        
-        for d in dims:
-            if not isinstance(d, basestring):
-                raise TypeError('dimension %s is not a string' % d)
-                
-        if not ( ( set(s.dims) & set(other.dims) ) == set(dims)):
-            raise ValueError('The two DataArrays shared dims should be the'  
-                            ' same as the dims to be summed over i.e. no' 
-                            ' repeated dim labels in the output and dims' 
-                            ' need to be shared to take a sum product.')
-        
+
         if not ( isinstance(other, DataArray) ):
-            raise TypeError('tensordot only operates on DataArrays.')
+            raise TypeError('dot only operates on DataArrays.')
+        
+        #sum over the common dims
+        dims = list(set(s.dims) & set(other.dims) )
     
         s, other = align(s, other, join='inner', copy=False)
     
@@ -1434,7 +1423,7 @@ class DataArray(AbstractArray, BaseDataObject):
         new_dims = ([d for d in s.dims if d not in dims] +
                     [d for d in other.dims if d not in dims])
     
-        return DataArray(new_data, new_coords, new_dims)
+        return type(self)(new_data, new_coords, new_dims)
 
 # priority most be higher than Variable to properly work with binary ufuncs
 ops.inject_all_ops_and_reduce_methods(DataArray, priority=60)

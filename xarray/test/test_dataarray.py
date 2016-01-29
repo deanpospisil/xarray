@@ -1598,7 +1598,7 @@ class TestDataArray(TestCase):
         with self.assertRaisesRegexp(AttributeError, 'cannot set attr'):
             array.other = 2
 
-    def test_tensordot(self):
+    def test_dot(self):
         x_trans = np.linspace(-3,3,6)
         y_trans = np.linspace(-3,3,5)
         imgID = range(4)
@@ -1614,9 +1614,9 @@ class TestDataArray(TestCase):
                         dims = [ 'models', 'y_trans_m', 'imgID' ] )
                         
         #test call on dask DataArray produces same result as call on DataArray
-        actual_DataArray = da.tensordot( dm, 'imgID')
+        actual_DataArray = da.dot(dm)
       
-        #test call on tensor dot produces the expected DataArray
+
         expected_vals = np.tensordot( da_vals, dm_vals, [2,2])
         expected_DataArray = DataArray( expected_vals , 
                 coords = [ x_trans, y_trans, models, y_trans], 
