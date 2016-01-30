@@ -1425,7 +1425,7 @@ class DataArray(AbstractArray, BaseDataObject):
     
         return type(self)(new_data, new_coords, new_dims)
         
-    def vecnorm( self, dims):
+    def vnorm( self, dims):
         """Get the vector norm of a data array along specificed dims'''
 
         Parameters
