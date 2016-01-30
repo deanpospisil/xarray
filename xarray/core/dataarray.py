@@ -1424,6 +1424,52 @@ class DataArray(AbstractArray, BaseDataObject):
                     [d for d in other.dims if d not in dims])
     
         return type(self)(new_data, new_coords, new_dims)
+        
+    def vecnorm( self, dims):
+        """Get the vector norm of a data array along specificed dims'''
+
+        Parameters
+        ----------
+        dims: over which dims to get the vectornorm
+
+        Returns
+        -------
+        DataArray(new_data, new_coords, new_dims) : DataArray
+            new_data: vector norm of the data
+            new_dims: the dims that were not summed over by vecnorm.
+            new_coords: coords corresponding to those original dims.
+            
+        See also
+        --------
+        np.norm(a,b, axes)
+
+        Examples
+        --------
+        
+        >>> da.dims
+        ('x_trans', 'y_trans', 'imgID')  
+   
+        >>> t = da.vecnorm( 'imgID' )
+        >>> t.dims
+        ('x_trans', 'y_trans')
+
+        """
+        s = self
+        if isinstance(dims, basestring):
+            dims = (dims,)
+        for d in dims:
+            if not isinstance(d, basestring):
+                raise TypeError('dimension %s is not a string' % d)
+
+        axes = (s.get_axis_num(dims))
+        f = ops._dask_or_eager_func('vnorm', n_array_args=1)
+        new_data = f(s.data,  axis=axes)
+        
+        new_coords = s.coords.merge(s.coords).drop(dims)
+    
+        new_dims = ([d for d in s.dims if d not in dims])
+    
+        return type(self)(new_data, new_coords, new_dims)
 
 # priority most be higher than Variable to properly work with binary ufuncs
 ops.inject_all_ops_and_reduce_methods(DataArray, priority=60)
